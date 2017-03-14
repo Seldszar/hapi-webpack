@@ -29,12 +29,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 /**
  * Creates the configuration object.
+ *
+ * @param {Object} options
+ * @return {Object}
  */
 function makeConfig(options) {
   const schema = {
-    compiler: [_joi2.default.object(), _joi2.default.string().default('webpack.config.js')],
+    compiler: _joi2.default.alternatives(_joi2.default.object(), _joi2.default.string()).default('webpack.config.js'),
     assets: _joi2.default.object().default({}),
-    hot: _joi2.default.object().default({})
+    hot: _joi2.default.alternatives(_joi2.default.boolean(), _joi2.default.object()).default({})
   };
 
   return _joi2.default.attempt(options, schema);
@@ -42,6 +45,9 @@ function makeConfig(options) {
 
 /**
  * Creates the Webpack compiler.
+ *
+ * @param {string|Object|Webpack} options
+ * @return {Webpack}
  */
 /* eslint-disable global-require, import/no-dynamic-require, import/prefer-default-export */
 
@@ -66,12 +72,8 @@ function makeCompiler(options) {
 function register(server, options, next) {
   const config = makeConfig(options);
   const compiler = makeCompiler(config.compiler);
-
-  // Configures middlewares
   const webpackDevMiddleware = (0, _webpackDevMiddleware2.default)(compiler, config.assets);
-  const webpackHotMiddleware = (0, _webpackHotMiddleware2.default)(compiler, config.hot);
 
-  // Handles WebpackDevMiddleware
   server.ext('onRequest', (request, reply) => {
     const { req, res } = request.raw;
 
@@ -84,22 +86,23 @@ function register(server, options, next) {
     });
   });
 
-  // Handles WebpackHotMiddleware
-  server.ext('onRequest', (request, reply) => {
-    const { req, res } = request.raw;
+  if (typeof config.hot === 'object' || config.hot === true) {
+    const webpackHotMiddleware = (0, _webpackHotMiddleware2.default)(compiler, config.hot || {});
 
-    webpackHotMiddleware(req, res, error => {
-      if (error) {
-        return reply(error);
-      }
+    server.ext('onRequest', (request, reply) => {
+      const { req, res } = request.raw;
 
-      return reply.continue();
+      webpackHotMiddleware(req, res, error => {
+        if (error) {
+          return reply(error);
+        }
+
+        return reply.continue();
+      });
     });
-  });
+  }
 
-  // Expose the Webpack compiler.
   server.expose({ compiler });
-
   return next();
 }
 

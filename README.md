@@ -1,5 +1,7 @@
 # Hapi Webpack Plugin
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/Seldszar/hapi-webpack.svg)](https://greenkeeper.io/)
+
 Another Webpack middleware for Hapi.
 This plugin is a modern adaptation of the work of [Simon Degraeve](https://github.com/SimonDegraeve/hapi-webpack-plugin) with [Hot Module Replacement (HMR)](https://webpack.js.org/concepts/hot-module-replacement/) support aswell.
 
